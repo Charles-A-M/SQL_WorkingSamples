@@ -1,0 +1,181 @@
+create a catalog: https://docs.oracle.com/database/121/RCMRF/rcmsynta012.htm#RCMRF117
+
+rman restore DB to new host: https://docs.oracle.com/database/121/BRADV/rcmadvre.htm#BRADV89833
+
+http://amilasanoracle.blogspot.com/2013/09/rman-backup-restoration-to-another.html
+
+ex
+
+
+
+select '  Set Newname For Datafile ' || file# || ' to ''' || name || ''';' from v$datafile;
+  
+  Set Newname For Datafile 1 to 'F:\OraData\IMSP\SYSTEM01.DBF';
+  Set Newname For Datafile 3 to 'f:\ORADATA\IMSP\SYSAUX01.DBF';
+  Set Newname For Datafile 5 to 'f:\ORADATA\IMSP\UNDOTBS01.DBF';
+  Set Newname For Datafile 6 to 'f:\ORADATA\IMSP\USERS01.DBF';
+  Set Newname For Datafile 7 to 'F:\ORADATA\IMSP\GRMSTAGING1.DBF';  
+  
+select 'Alter Database Rename File ''' || Member || ''' To ''' || Member || ''';' from v$logfile;
+
+   Alter Database Rename File 'O:\ORADATA\IMSP\REDO03.LOG' To 'f:\ORADATA\IMSP\REDO03.LOG';
+   Alter Database Rename File 'O:\ORADATA\IMSP\REDO02.LOG' To 'f:\ORADATA\IMSP\REDO02.LOG';
+   Alter Database Rename File 'O:\ORADATA\IMSP\REDO01.LOG' To 'f:\ORADATA\IMSP\REDO01.LOG';
+
+-- RMAN script to restore a PDB 
+-- get the SCN from backups.
+-- perform list backup summary to get a valid disk backup #.
+-- then do a list backup to log file to get the details, which include SCN #s.
+
+OraDim -new -sid IMSP
+
+run {
+ set until scn = 2263440;
+ restore pluggable database han84;
+ recover pluggable database han84 auxiliary destination='O:\OraData\TestCDB\Han84\han84recov';
+ alter pluggable database han84 open resetlogs;
+ }
+ 
+ 
+ 
+ run {
+ set until scn = 2263440;
+ recover pluggable database han84 auxiliary destination='O:\OraData\TestCDB\Han84\han84recov';
+ alter pluggable database han84 open resetlogs;
+ }
+
+ 1 and 2: archive log
+ 
+run {
+ allocate channel disk1 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\o1_mf_annnn_level_1_cumulative_dklfwrmp_.bkp';
+ allocate channel disk2 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\o1_mf_annnn_level_1_cumulative_dklfwx5k_.bkp';
+ allocate channel disk3 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\o1_mf_annnn_level_1_cumulative_dklg9k41_.bkp';
+ allocate channel disk4 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\O1_MF_NNND1_TAG20170515T010816_DKLG6YFD_.BKP';
+ allocate channel disk5 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\O1_MF_NNND1_TAG20170515T010816_DKLG70FD_.BKP';
+ restore controlfile;
+}
+
+#From Autobackup folder:
+recover controlfile from 'G:\OraRecovery\TestCDB\2017_05_15\O1_MF_S_944010868_DKLG9OOP_.BKP'
+
+ 
+
+  allocate channel disk01 device type disk format 'G:\OraRecovery\TestCDB\2017_05_13\O1_MF_ANNNN_LEVEL_0_DKF5BDD6_.BKP';
+  allocate channel disk02 device type disk format 'G:\OraRecovery\TestCDB\2017_05_13\O1_MF_ANNNN_LEVEL_0_DKF5Y9GQ_.BKP';
+  allocate channel disk03 device type disk format 'G:\OraRecovery\TestCDB\2017_05_13\O1_MF_ANNNN_LEVEL_0_DKF599HN_.BKP';
+  allocate channel disk04 device type disk format 'G:\OraRecovery\TestCDB\2017_05_13\O1_MF_ANNNN_LEVEL_0_DKF5920K_.BKP';
+  allocate channel disk05 device type disk format 'G:\OraRecovery\TestCDB\2017_05_13\O1_MF_NNND0_TAG20170513T011039_DKF5RXK4_.BKP';
+  allocate channel disk06 device type disk format 'G:\OraRecovery\TestCDB\2017_05_13\O1_MF_NNND0_TAG20170513T011039_DKF5RYGD_.BKP';
+  allocate channel disk07 device type disk format 'G:\OraRecovery\TestCDB\2017_05_13\O1_MF_NNND0_TAG20170513T011039_DKF5T9RJ_.BKP';
+  allocate channel disk08 device type disk format 'G:\OraRecovery\TestCDB\2017_05_13\O1_MF_NNND0_TAG20170513T011039_DKF5X3JP_.BKP';
+  allocate channel disk09 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\o1_mf_annnn_level_1_cumulative_dklfwrmp_.bkp';
+  allocate channel disk10 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\o1_mf_annnn_level_1_cumulative_dklfwx5k_.bkp';
+  allocate channel disk11 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\o1_mf_annnn_level_1_cumulative_dklg9k41_.bkp';
+  allocate channel disk12 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\O1_MF_NNND1_TAG20170515T010816_DKLG6YFD_.BKP';
+  allocate channel disk13 device type disk format 'G:\OraRecovery\TestCDB\2017_05_15\O1_MF_NNND1_TAG20170515T010816_DKLG70FD_.BKP';
+
+
+  catalog start with 'G:\OraRecovery\TestCdb\';
+  
+list backup of datafile 2;  
+
+RUN  {
+ # allocate a channel to the tape device
+    allocate channel disk01 device type disk ;
+ # rename the data files and online redo logs
+  Set NewName For Datafile 1 To 'F:\Oradata\TestCDB\SYSTEM01.DBF';
+  Set NewName For Datafile 2 To 'F:\Oradata\TestCDB\PDBSEED\SYSTEM01.DBF';
+  Set NewName For Datafile 3 To 'F:\Oradata\TestCDB\SYSAUX01.DBF';
+  Set NewName For Datafile 4 To 'F:\Oradata\TestCDB\PDBSEED\SYSAUX01.DBF';
+  Set NewName For Datafile 5 To 'F:\Oradata\TestCDB\UNDOTBS01.DBF';
+  Set NewName For Datafile 6 To 'F:\Oradata\TestCDB\USERS01.DBF';
+  Set NewName For Datafile 9 To 'F:\Oradata\TestCDB\Pdb\HAN84\SYSTEM01.DBF';
+  Set NewName For Datafile 10 To 'F:\Oradata\TestCDB\Pdb\HAN84\SYSAUX01.DBF';
+  Set NewName For Datafile 13 To 'F:\Oradata\TestCDB\Pdb\HAN84\USERS_01.DBF';
+  Set NewName For Datafile 14 To 'F:\Oradata\TestCDB\Pdb\HAN84\GRMSTAGING_01.DBF';
+  Set NewName For Datafile 15 To 'F:\Oradata\TestCDB\Pdb\REPOS\SYSTEM01.DBF';
+  Set NewName For Datafile 16 To 'F:\Oradata\TestCDB\Pdb\REPOS\SYSAUX01.DBF';
+  Set NewName For Datafile 17 To 'F:\Oradata\TestCDB\Pdb\REPOS\MGMT_ECM_DEPOT_01.DBF';
+  Set NewName For Datafile 18 To 'F:\Oradata\TestCDB\Pdb\REPOS\MGMT_01.DBF';
+  Set NewName For Datafile 19 To 'F:\Oradata\TestCDB\Pdb\REPOS\MGMT_AD4J_01.DBF';
+  Set NewName For Datafile 20 To 'F:\Oradata\TestCDB\Pdb\REPOS\USERS_01.DBF';
+  Set NewName For Datafile 21 To 'F:\Oradata\TestCDB\Pdb\IPSDEV02\O1_MF_SYSTEM_DJPDQMV2_.DBF';
+  Set NewName For Datafile 22 To 'F:\Oradata\TestCDB\Pdb\IPSDEV02\O1_MF_SYSAUX_DJPDQMWF_.DBF';
+  Set NewName For Datafile 23 To 'F:\Oradata\TestCDB\Pdb\IPSDEV02\O1_MF_USERS_DJPDQMWS_.DBF';
+  Set NewName For Datafile 24 To 'F:\Oradata\TestCDB\Pdb\IPSDEV02\O1_MF_GRMSTAGI_DJPDQMX3_.DBF';
+  #rename log files
+  #Alter Database Rename File 'O:\ORADATA\TESTCDB\REDO01.LOG' To 'F:\ORADATA\TESTCDB\REDO01.LOG';
+  #Alter Database Rename File 'O:\ORADATA\TESTCDB\REDO02.LOG' To 'F:\ORADATA\TESTCDB\REDO02.LOG';
+  #Alter Database Rename File 'O:\ORADATA\TESTCDB\REDO03.LOG' To 'F:\ORADATA\TESTCDB\REDO03.LOG';
+  #   Do a SET UNTIL to prevent recovery of the online logs
+  #set until scn = 2263440;
+  #    restore the database and switch the data file names
+  RESTORE DATABASE;
+  SWITCH DATAFILE ALL;
+  # recover the database
+  RECOVER DATABASE;
+}
+
+
+
+
+
+
+run {
+ allocate channel disk1 device type disk format 'G:\OraRecovery\IMSP\BACKUPSET\2017_05_22O1_MF_NCNNF_CONTROLFILEBACKUP_DL4WJJX7_.BKP';
+ allocate channel disk02 device type disk format 'G:\OraRecovery\IMSP\BACKUPSET\2017_05_19\O1_MF_NNSNF_SPFILEBACKUP_DKY525BL_.BKP';
+ restore controlfile to 'F:\OraData\IMSP\controlIMSP.ora' from autobackup recovery area='G:\OraRecovery\IMSP' db_name=imsp;
+ restore spfile to 'd:\oracle\product\12.2.0\dbhome_1\Database\InitIMSP.ora' from autobackup recovery area='G:\OraRecovery\IMSP' db_name=imsp;
+}
+
+### ###################################
+### Working actions below.
+### ###################################
+
+###Set the DBID to the old database engine.
+ set DBID=2455983961;
+ 
+###SET FILE PERMISSIONS on recovery area and destination folder.
+
+### Restore SPFILE and make a Pfile.
+restore spfile to 'd:\oracle\product\12.2.0\dbhome_1\Database\InitIMSP.ora' from autobackup db_recovery_file_dest='G:\OraRecovery' db_name='IMSP';
+create pfile='d:\oracle\product\12.2.0\dbhome_1\Database\pfileIMSP.ora' from spfile='d:\oracle\product\12.2.0\dbhome_1\Database\InitIMSP.ora';
+
+### alter pfile to set new destination paths, especially db_recovery_file_dest and control_files
+shutdown immediate;
+startup nomount pfile='path\to\pfile.ora';
+
+set DBID=2455983961;
+restore controlfile from autobackup;
+
+alter database mount;
+### catalog the existing backups
+catalog start with 'g:\OraRecovery\imsp';
+
+###Start the restore.
+run {
+   Set Newname For Datafile 1 to 'F:\ORADATA\IMSP\SYSTEM01.DBF';
+   Set Newname For Datafile 3 to 'f:\ORADATA\IMSP\SYSAUX01.DBF';
+   Set Newname For Datafile 5 to 'f:\ORADATA\IMSP\UNDOTBS01.DBF';
+   Set Newname For Datafile 6 to 'f:\ORADATA\IMSP\USERS01.DBF';
+   Set Newname For Datafile 7 to 'f:\ORADATA\IMSP\GRMSTAGING1.DBF';
+   #Alter Database Rename File 'O:\ORADATA\IMSP\REDO03.LOG' To 'f:\ORADATA\IMSP\REDO03.LOG';
+   #Alter Database Rename File 'O:\ORADATA\IMSP\REDO02.LOG' To 'f:\ORADATA\IMSP\REDO02.LOG';
+   #Alter Database Rename File 'O:\ORADATA\IMSP\REDO01.LOG' To 'f:\ORADATA\IMSP\REDO01.LOG';
+   #set until scn 1234;
+   RESTORE DATABASE;
+   SWITCH DATAFILE ALL;
+   RECOVER DATABASE;
+}
+
+### Switch back from pfile to SPfile.
+create spfile from pfile='D:\Oracle\product\12.2.0\dbhome_1\database\pfileimsp.ora';
+
+### open the db
+alter database open resetlogs;
+
+### if that fails, may need to:
+# alter database clear unarchived logfile group 1;
+
+
+

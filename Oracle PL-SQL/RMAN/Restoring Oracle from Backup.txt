@@ -1,0 +1,186 @@
+
+	Porting Hansen SOURCE Database
+	Purpose
+		This document provides the steps required to port SOURCE from Oracle Production (WtrOra12PS) to a new instance of Oracle. This process if fairly complex because there appears to be corrupt/invalid data in the system tablespace of SOURCE.
+	Overview
+		The general overview of this process is:
+		1.	Backup SOURCE and copy files to new host.
+		2.	Stage temporary SOURCE instance on new host.
+		3.	Restore SOURCE backups to temporary instance.
+		4.	Rename the instance.
+		5.	Backup the new database.
+	Detailed Steps
+
+Phase 1, get backups to new host
+
+	Use RMAN to back up the SPFILE and Control File.
+	
+>		RMAN backupUser/<pwd>@SOURCE NOCATALOG
+			backup current controlfile tag='Controlfile Level 0';
+			backup spfile tag='SPFile Level 0';
+			
+			
+Copy the files from each folder in fast recovery area going back to the prior full backup, to the new host’s default fast recovery area.
+Run these two scripts in SQL Developer on soure to identify the file names for renaming. Save the output for later use:
+
+	select '  Set Newname For Datafile ' || file# || ' to ''' || name || ''';' from v$datafile;
+	select '  Alter Database Rename File ''' || Member || ''' To ''' || Member || ''';' from v$logfile;
+	Select dbid from v$database;
+	
+The output will be something like:
+	Set Newname For Datafile 1 to 'F:\OraData\SOURCE\SYSTEM01.DBF';
+	Set Newname For Datafile 3 to 'f:\ORADATA\SOURCE\SYSAUX01.DBF';
+	Set Newname For Datafile 5 to 'f:\ORADATA\SOURCE\UNDOTBS01.DBF';
+	Set Newname For Datafile 6 to 'f:\ORADATA\SOURCE\USERS01.DBF';
+	Set Newname For Datafile 7 to 'F:\ORADATA\SOURCE\GRMSTAGING1.DBF';  
+
+	Alter Database Rename File 'O:\ORADATA\SOURCE\REDO03.LOG' To 'f:\ORADATA\SOURCE\REDO03.LOG';
+	Alter Database Rename File 'O:\ORADATA\SOURCE\REDO02.LOG' To 'f:\ORADATA\SOURCE\REDO02.LOG';
+	Alter Database Rename File 'O:\ORADATA\SOURCE\REDO01.LOG' To 'f:\ORADATA\SOURCE\REDO01.LOG';
+
+Update these paths to the new host’s paths and to replace SOURCE with the new instance name. Save the resulting output for use in RMAN later.
+
+Phase 2, Stage SOURCE instance on new host
+
+	Reference http://amilasanoracle.blogspot.com/2013/09/rman-backup-restoration-to-another.html
+
+Create the following folders on the new host:
+•	Data directory (F:\OraData\<instance>)
+•	Recovery directory (F:\Recovery_area\<instance>)
+•	Admin directory (d:\Oracle\admin\<instance>\ControlFile)
+
+On the new host, run OraDim to stage a new, empty, instance. This will have to be run from CMD as an Administrator.
+>	OraDim -new -sid SOURCE
+
+Then use RMAN to recover the SPFILE and ControlFiles. Update the paths as needed.
+>	Set Oracle_SID=SOURCE
+>	RMAN target /
+		Set DBID= <DBID OF SOURCE>;
+		startup nomount;
+		
+		restore spfile to 'C:\Oracle\product\12.1.0\dbhome_1\database\InitSOURCE.ora' from 'F:\fast_recovery\SOURCE\BACKUPSET\2017_06_27\O1_MF_NNSNF_SPFILE_LEVEL_0_DOSTOJT8_.BKP';
+		create pfile='c:\oracle\product\12.1.0\dbhome_1\Database\pfileSOURCE.ora' from spfile='c:\oracle\product\12.1.0\dbhome_1\Database\InitSOURCE.ora';
+		
+		shutdown immediate;
+
+Do not close RMAN. Edit the pfile created above in a separate window. 
+Adjust the paths and memory requirements to match the new environment. 
+Do not change the DB name or version. Copy an existing instance’s pfile to get valid RAM settings if needed.
+
+Back in RMAN, restore the control files. Again, adjust the path to match the backup from phase 1.
+
+		startup nomount pfile='c:\oracle\product\12.1.0\dbhome_1\Database\pfileSOURCE.ora’;
+		restore controlfile from 'F:\fast_recovery\SOURCE\BACKUPSET\2017_07_05\O1_MF_NCNNF_CONTROLFILE_LEVEL_0_DOSTO715_.BKP';
+		Alter Database Mount;
+		
+Phase 3, restore the database
+Back in RMAN, catalog the backups copied during phase 1. Update this script to the correct path.
+Once this completes, change the log file paths. Use the script results edited during phase 1.
+And then restore the database itself.
+
+		catalog start with 'F:\fast_recovery\SOURCE\';
+
+		Alter Database Rename File 'O:\ORADATA\SOURCE\REDO03.LOG' To 'f:\ORADATA\NEWNAME\REDO03.LOG';
+		Alter Database Rename File 'O:\ORADATA\SOURCE\REDO02.LOG' To 'f:\ORADATA\NEWNAME\REDO02.LOG';
+		Alter Database Rename File 'O:\ORADATA\SOURCE\REDO01.LOG' To 'f:\ORADATA\NEWNAME\REDO01.LOG';
+
+		run { 
+			Set Newname For Datafile 1 to 'f:\ORADATA\NEWNAME\SYSTEM01.DBF';
+			Set Newname For Datafile 3 to 'f:\ORADATA\NEWNAME\SYSAUX01.DBF';
+			Set Newname For Datafile 5 to 'f:\ORADATA\NEWNAME\UNDOTBS01.DBF';
+			Set Newname For Datafile 6 to 'f:\ORADATA\NEWNAME\USERS01.DBF';
+			Set Newname For Datafile 7 to 'f:\ORADATA\NEWNAME\GRMSTAGING1.DBF'; 
+			RESTORE DATABASE;
+			SWITCH DATAFILE ALL;
+			RECOVER DATABASE;
+		}
+
+To Restore to a specific point in time, use this command instead of Restore Database in the above script: 
+			RESTORE DATABASE UNTIL TIME "to_date('11/03/2017 11:34:50 am','mm/dd/yyyy hh:mi:ss am')";
+			
+This will take a while as it builds out files and restores data from backups. Once complete, switch back to SPFile from PFile.
+
+		create spfile from pfile='c:\oracle\product\12.1.0\dbhome_1\Database\pfileSOURCE.ora’;
+		alter database open resetlogs;
+
+
+Oracle does not backup or restore TEMP tablespace. This will prevent the full recovery from succeeding. Create a new temp tablespace, drop the old, and then rebuild the original one.
+
+		CREATE TEMPORARY TABLESPACE TEMP_NEW TEMPFILE 'f:\OraData\NEWNAME\TempNew1.dbf' SIZE 5m autoextend on next 10m maxsize unlimited;
+		ALTER DATABASE DEFAULT TEMPORARY TABLESPACE TEMP_NEW;
+		DROP TABLESPACE TEMP including contents;
+		CREATE TEMPORARY TABLESPACE TEMP TEMPFILE 'f:\OraData\NEWNAME\Temp01.dbf' SIZE 50m autoextend on next 10m maxsize unlimited;
+		ALTER DATABASE DEFAULT TEMPORARY TABLESPACE TEMP;
+		DROP TABLESPACE TEMP_NEW including contents and datafiles;
+
+Phase 4, rename the instance
+
+SOURCE is now running on the new host, but we need to change the name. 
+Reference http://www.dba-oracle.com/t_rename_database_oracle_sid.htm
+Still in RMAN, shut down the database so we can rename it.
+
+		Shutdown Immediate;
+		Startup Mount;
+		
+From a new Administrator CMD window (don’t close RMAN), issue the following commands:
+	Set ORACLE_SID=SOURCE
+	nid TARGET=/ DBNAME=NEWNAME
+
+Note the new DBID, as that’s important for disaster recovery purposes. Back in the RMAN window, shutdown the DB, restart it, issue the rename for SPFILE, and then shut down again.
+		Shutdown Immediate;
+		Startup Mount;
+		Alter System Set DB_NAME=NEWNAME scope=SPFILE;
+		show parameter target;
+		alter system set memory_max_target=8g scope=spfile;
+		alter system set memory_target=7g scope=spfile;
+		Shutdown Immediate;
+		
+From the other CMD window, create a new password file, and recreate the Windows services. Note, this utility does not use quotes around the path, unlike most cases in Oracle.
+
+		orapwd file=D:\Oracle\Oracle_19.3\database\pwdNEWNAME.ora password=<SYS pwd> entries=25
+		oradim -delete -sid SOURCE
+		oradim -new -sid NEWNAME -intpwd <SYS pwd> -startmode a 
+		
+Restart the database.
+	Set Oracle_SID=NEWNAME
+	lsnrctl reload
+	sqlplus / as sysdba
+	Startup Mount;
+	Alter Database Open ResetLogs;
+
+Phase 5, Backup the instance
+
+Grant SYSDBA to backup user and register the database with the appropriate RMAN catalog.
+Then Perform a level 0 backup via RMAN. 
+
+	RMAN Target backupuser/<PWD>@NEWNAME Catalog=rcat_user/<PWD>@RecoveryDB2
+		register database;
+
+		run {
+			CONFIGURE CONTROLFILE AUTOBACKUP ON;
+			CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 14 DAYS;
+			Configure compression algorithm 'MEDIUM' optimize for load false;
+			Configure device type disk backup type to compressed backupset;
+			Configure device type disk parallelism 2;
+		}
+		crosscheck archivelog all;
+		backup device type disk incremental level = 0 section size 1g database plus archivelog tag 'level 0';
+		backup current controlfile tag='Controlfile Level 0';
+		backup spfile tag='SPFile Level 0';
+		
+Add this instance to the RMAN backup batch files.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1 @@
+ALTER DATABASE  SET TIME_ZONE = 'US/Eastern' 

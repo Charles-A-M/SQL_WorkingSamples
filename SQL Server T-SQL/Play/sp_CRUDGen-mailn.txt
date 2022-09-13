@@ -1,0 +1,4 @@
+explanation video: https://www.youtube.com/watch?v=HYCKyRi8k6w
+https://github.com/kevinmartintech/sp_CRUDGen
+
+This create update, insert, delete, search procedures from exising tables.

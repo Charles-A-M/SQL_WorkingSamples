@@ -1,0 +1,1 @@
+impdp \"/  as sysdba\" SCHEMAS=inforion remap_schema=OLDSCHEMA:NEWSCHEMA directory=COD_DUMP_DIR dumpfile=IPSDev03_exp_%u.dmp logfile=IONWRS.log

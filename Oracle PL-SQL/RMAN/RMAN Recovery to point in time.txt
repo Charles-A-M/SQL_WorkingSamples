@@ -1,0 +1,31 @@
+##
+##Connect to Rman Target and Catalog. Issue these command:
+## rman target / catalog=rcat_user/codWaterBackups@recoverydb @C:\Oracle\Backups\rman_full.txt log=c:\oracle\backups\logs\Full_IPSDev_%wkday%.log
+## shutdown immediate;
+## startup mount;
+# Incarnation 0 to 1 (24 Jan 17, 13:00)
+# Incarnation 1 to 2 (25 Jan 17, 11:00)
+
+run {
+    set until time "to_date('25-JAN-2017 11:00:00','DD-MON-YYYY HH24:MI:SS')";
+    restore database ;
+    recover database ;
+}
+
+### Bring DB Online one restore completes with...
+###   alter database open resetlogs;
+
+#Run a full backup!
+
+crosscheck archivelog all;
+
+backup device type disk incremental level = 0 section size 1g database plus archivelog tag='level 0';
+backup current controlfile tag='Controlfile Level 0';
+backup spfile tag='SPFile Level 0';
+
+allocate channel for maintenance type disk;
+backup validate check logical database archivelog all;
+
+crosscheck backupset;
+crosscheck backup device type disk;
+list backup of database summary;
