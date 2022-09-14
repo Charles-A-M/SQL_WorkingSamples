@@ -1,4 +1,5 @@
-/*
+ THROW 51000, 'Why are you here?', 1;  
+ /*
 	Bitwise operations.
 	https://dietertack.medium.com/bitwise-operators-c-746a6cdf90e6
 	
