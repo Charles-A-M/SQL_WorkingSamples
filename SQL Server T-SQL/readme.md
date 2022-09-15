@@ -46,6 +46,7 @@ Below are some useful links for SQL Server / T-SQL concepts.
  
 ### Tools
  - [Random text](https://stackoverflow.com/questions/1324063/generating-random-strings-with-t-sql/1324390#1324390) this gives reproduceable, but random, text.
+ - [Random Numbers](https://web.archive.org/web/20110829015850/http://blogs.lessthandot.com/index.php/DataMgmt/DataDesign/sql-server-set-based-random-numbers) [See also](https://stackoverflow.com/questions/1045138/how-do-i-generate-a-random-number-for-each-row-in-a-t-sql-select)  Select ABS(CHECKSUM(NewID())) % 20 + 1 
  - [CSV splitter](https://www.sqlservercentral.com/articles/tally-oh-an-improved-sql-8k-%E2%80%9Ccsv-splitter%E2%80%9D-function)
  - [Numbers (Tally) Table](https://www.mssqltips.com/sqlservertip/6727/tsql-tips-tricks/)
  - [Calendar table](https://www.mssqltips.com/sqlservertip/4054/creating-a-date-dimension-or-calendar-table-in-sql-server/)
@@ -92,7 +93,8 @@ Leading zeroes can be omitted from month, day, hour, minute, etc. by using one l
 
      Select FORMAT(sysdatetimeoffset(), 'dd MMMM yyyy gg, yyyy-MM-dd, MMM, ddd, dddd, hh tt, HH:mm:ss.fffffff zzz, zz')  
      -- returns: 15 September 2022 A.D., 2022-09-15, Sep, Thu, Thursday, 02 PM, 14:41:50.8944856 -04:00, -04
-Ye
+
+SYSDATETIME() returns the current time to the millisecond (nanoseconds are there, but not really accurate). SYSDATETIMEOFFSET() gets system time with timezone offset.
 
 DATEPART(part, date) -- notice that there are no ' around the part here. This returns the value as a number.
  
