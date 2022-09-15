@@ -87,8 +87,12 @@ Using CONVERT(VARCHAR, datevalue, Num) provides the following output depending o
 
 
 Use FORMAT(datevalue, 'code') to convert dates to strings. The codes can be combined, so
-Select FORMAT(sysdatetimeoffset(), 'dd MMMM yyyy gg, yyyy-MM-dd, MMM, ddd, dddd, hh tt, HH:mm:ss.fffffff zzz, zz')  
-returns 15 September 2022 A.D., 2022-09-15, Sep, Thu, Thursday, 02 PM, 14:41:50.8944856 -04:00, -04
+Note that these symbols are case sensitive. Year can be shortened to 1, 2, or 3 digits by using y, yy, or yyy.
+Leading zeroes can be omitted from month, day, hour, minute, etc. by using one letter instead of two.
+
+     Select FORMAT(sysdatetimeoffset(), 'dd MMMM yyyy gg, yyyy-MM-dd, MMM, ddd, dddd, hh tt, HH:mm:ss.fffffff zzz, zz')  
+     -- returns: 15 September 2022 A.D., 2022-09-15, Sep, Thu, Thursday, 02 PM, 14:41:50.8944856 -04:00, -04
+Ye
 
 DATEPART(part, date) -- notice that there are no ' around the part here. This returns the value as a number.
  
