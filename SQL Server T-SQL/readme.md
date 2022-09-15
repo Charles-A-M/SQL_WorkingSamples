@@ -1,6 +1,7 @@
 # SQL Server Links
 
 Below are some useful links for SQL Server / T-SQL concepts.
+[//]: # (https://github.com/Charles-A-M/SQL_WorkingSamples)
 
 ## T-SQL
 
@@ -10,21 +11,16 @@ Below are some useful links for SQL Server / T-SQL concepts.
  - [Deleting Duplicate Rows using ROW_NUMBER](https://www.mssqltips.com/sqlservertip/6727/tsql-tips-tricks/)
  - [Numbers (Tally) Table](https://www.mssqltips.com/sqlservertip/6727/tsql-tips-tricks/)
  - [STRING_AGG function](https://www.mssqltips.com/sqlservertip/6727/tsql-tips-tricks/)
+ - [Select statement processing order](https://www.mssqltips.com/sqlservertutorial/9123/sql-server-window-function-syntax/) From --> on (used in joins) --> joins --> where --> group by --. having --> select --> calculations/distinct/window functions --> order --> top
  
-
-
+#### Window Functions
+ - [Intro to Window Functions](https://www.mssqltips.com/sqlservertutorial/9121/sql-server-t-sql-window-functions-tutorial/)
+ - [Basic examples](https://www.mssqltips.com/sqlservertutorial/9122/sql-server-window-functions-examples/) (Grand totals, top X by rank, medians)
+ - [General syntax](https://www.mssqltips.com/sqlservertutorial/9123/sql-server-window-function-syntax/) and query processing order
  
-		
-	https://www.mssqltips.com/sqlservertutorial/9121/sql-server-t-sql-window-functions-tutorial/
-		Window Functions
-		https://www.mssqltips.com/sqlservertutorial/9122/sql-server-window-functions-examples/
-			Calc grand total (SUM) without grouping
-			Find top records by Ranks like max sales
-			Median value using PERCENTILE_CONT 
-		https://www.mssqltips.com/sqlservertutorial/9123/sql-server-window-function-syntax/
 			general syntax
 			query processing order
-				From --> on (used in joins) --> joins --> where --> group by --. having --> select --> calculations/distinct/window functions --> order --> top
+				
 		https://www.mssqltips.com/sqlservertutorial/9124/sql-server-window-aggregate-functions-sum-min-max-and-avg/
 			running totals
 			range vs rows
