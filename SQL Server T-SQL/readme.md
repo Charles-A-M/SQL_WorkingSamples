@@ -59,46 +59,63 @@ Below are some useful links for SQL Server / T-SQL concepts.
 
 
 ### Date Formatting
+Using CONVERT(VARCHAR, datevalue, Num) provides the following output depending on the Num parameter:
 
-| Num | Convert(VarChar, <DATE>),<NUM>) |
-| --- | ------------------------------- |
-| 0   | Sep 15 2022  1:54PM |
-| 1   | 09/15/22 |
-| 2   | 22.09.15 |
-| 3   | 15/09/22 |
-| 4   | 15.09.22 |
-| 5   | 15-09-22 |
-| 6   | 15 Sep 22 |
-| 7   | Sep 15, 22 |
-| 8   | 13:54:43 |
-| 9   | Sep 15 2022  1:54:43.8320428PM |
-| 10  | 09-15-22 |
-| 11  | 22/09/15 |
-| 12  | 220915 |
-| 13  | 15 Sep 2022 13:54:43.8320428 |
-| 14  | 13:54:43.8320428 |
-| 20  | 2022-09-15 13:54:43 |
-| 21  | 2022-09-15 13:54:43.8320428 |
-| 22  | 09/15/22  1:54:43 PM |
-| 23  | 2022-09-15 |
-| 24  | 13:54:43 |
-| 25  | 2022-09-15 13:54:43.8320428 |
-| 100 | Sep 15 2022  1:54PM |
-| 101 | 09/15/2022 |
-| 102 | 2022.09.15 |
-| 103 | 15/09/2022 |
-| 104 | 15.09.2022 |
-| 105 | 15-09-2022 |
-| 106 | 15 Sep 2022 |
-| 107 | Sep 15, 2022 |
-| 108 | 13:54:43 |
-| 109 | Sep 15 2022  1:54:43.8320428PM |
-| 110 | 09-15-2022 |
-| 111 | 2022/09/15 |
-| 112 | 20220915 |
-| 113 | 15 Sep 2022 13:54:43.8320428 |
-| 114 | 13:54:43.8320428 |
-| 120 | 2022-09-15 13:54:43 |
-| 121 | 2022-09-15 13:54:43.8320428 |
-| 126 | 2022-09-15T13:54:43.8320428 |
-| 127 | 2022-09-15T13:54:43.8320428 |
+| Num | Convert(VarChar, DATE ,NUM) | Num | Convert(VarChar, DATE ,NUM) |
+| --- | ------------------------------- | --- | ------------------------------- |
+| 0   | Sep 15 2022  1:54PM | 100 | Sep 15 2022  1:54PM |
+| 1   | 09/15/22 | 101 | 09/15/2022 |
+| 2   | 22.09.15 | 102 | 2022.09.15 |
+| 3   | 15/09/22 | 103 | 15/09/2022 |
+| 4   | 15.09.22 | 104 | 15.09.2022 |
+| 5   | 15-09-22 | 105 | 15-09-2022 |
+| 6   | 15 Sep 22 | 106 | 15 Sep 2022 |
+| 7   | Sep 15, 22 | 107 | Sep 15, 2022 |
+| 8   | 13:54:43 | 108 | 13:54:43 |
+| 9   | Sep 15 2022  1:54:43.8320428PM | 109 | Sep 15 2022  1:54:43.8320428PM |
+| 10  | 09-15-22 | 110 | 09-15-2022 |
+| 11  | 22/09/15 | 111 | 2022/09/15 |
+| 12  | 220915 | 112 | 20220915 |
+| 13  | 15 Sep 2022 13:54:43.8320428 | 113 | 15 Sep 2022 13:54:43.8320428 |
+| 14  | 13:54:43.8320428 | 114 | 13:54:43.8320428 |
+| 20  | 2022-09-15 13:54:43 | 120 | 2022-09-15 13:54:43 |
+| 21  | 2022-09-15 13:54:43.8320428 | 121 | 2022-09-15 13:54:43.8320428 |
+| 22  | 09/15/22  1:54:43 PM | 126 | 2022-09-15T13:54:43.8320428 |
+| 23  | 2022-09-15 | 127 | 2022-09-15T13:54:43.8320428 |
+| 24  | 13:54:43   | | |
+| 25  | 2022-09-15 13:54:43.8320428 | | |
+
+
+Use FORMAT(datevalue, 'code') to convert dates to strings. The codes can be combined, so
+Select FORMAT(sysdatetimeoffset(), 'dd MMMM yyyy gg, yyyy-MM-dd, MMM, ddd, dddd, hh tt, HH:mm:ss.fffffff zzz, zz')  
+returns 15 September 2022 A.D., 2022-09-15, Sep, Thu, Thursday, 02 PM, 14:41:50.8944856 -04:00, -04
+
+DATEPART(part, date) -- notice that there are no ' around the part here. This returns the value as a number.
+ 
+| Desc | Format | FormatResult | DatePart | DatePartResult |
+| ---- | ------ | ------------ | -------- | -------------- |
+| Year |  Format(SysDateTimeOffset(), 'yyyy')  | 2022 | DatePart(YEAR, SysDateTimeOffset()) | 2022 |
+| BC/AD |  Format(SysDateTimeOffset(), 'gg')  | A.D. |    |  |
+| Quarter |     |    | DatePart(QUARTER, SysDateTimeOffset()) | 3 |
+| Month |  Format(SysDateTimeOffset(), 'MM')  | 09 | DatePart(MONTH, SysDateTimeOffset()) | 9 |
+| Month Name |  Format(SysDateTimeOffset(), 'MMMM')  | September |    |  |
+| Month Abbrev. |  Format(SysDateTimeOffset(), 'MMM')  | Sep |    |  |
+| ISO Week |     |    | DatePart(ISO_WEEK, SysDateTimeOffset()) | 37 |
+| Week Number |     |    | DatePart(WEEK, SysDateTimeOffset()) | 38 |
+| Day of Year |     |    | DatePart(DAYOFYEAR, SysDateTimeOffset()) | 258 |
+| Day |  Format(SysDateTimeOffset(), 'dd')  | 15 | DatePart(DAY, SysDateTimeOffset()) | 15 |
+| Day Name |  Format(SysDateTimeOffset(), 'dddd')  | Thursday |    |  |
+| Day Abbrev. |  Format(SysDateTimeOffset(), 'ddd')  | Thu |    |  |
+| Weekday |     |    | DatePart(WEEKDAY, SysDateTimeOffset()) | 5 |
+| Hour (24-hour) |  Format(SysDateTimeOffset(), 'HH')  | 14 | DatePart(HOUR, SysDateTimeOffset()) | 14 |
+| Hour (12 hour) |  Format(SysDateTimeOffset(), 'hh')  | 02 |    |  |
+| AM/PM |  Format(SysDateTimeOffset(), 'tt')  | PM |    |  |
+| Minute |  Format(SysDateTimeOffset(), 'mm')  | 34 | DatePart(MINUTE, SysDateTimeOffset()) | 34 |
+| Second |  Format(SysDateTimeOffset(), 'ss')  | 50 | DatePart(SECOND, SysDateTimeOffset()) | 50 |
+| Millisecond |  Format(SysDateTimeOffset(), 'fff')  | 484 | DatePart(MILLISECOND, SysDateTimeOffset()) | 484 |
+| Microsecond |  Format(SysDateTimeOffset(), 'ffffff')  | 484150 | DatePart(MICROSECOND, SysDateTimeOffset()) | 484150 |
+| Nanosecond |  Format(SysDateTimeOffset(), 'fffffff')  | 4841508 | DatePart(NANOSECOND, SysDateTimeOffset()) | 484150800 |
+| Timezone |     |    | DatePart(TZOFFSET, SysDateTimeOffset()) | -240 |
+| Time Zone |  Format(SysDateTimeOffset(), 'zzz')  | -04:00 |    |  |
+| Time Zone |  Format(SysDateTimeOffset(), 'zz')  | -04 |    |  |
+ 
