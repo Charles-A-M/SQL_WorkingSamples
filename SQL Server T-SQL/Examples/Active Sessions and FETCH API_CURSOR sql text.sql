@@ -1,6 +1,8 @@
 -- kill 59;
 
-exec sp_WhoIsActive @sort_order='[blocking_session_id], [session_id]';
+EXEC sp_WhoIsActive
+    @find_block_leaders = 1,
+    @sort_order = '[blocked_session_count] DESC, session_id'
 
  -- resolve the FETCH API_CURSOR.... cursors to their underlying query:
 SELECT c.session_id, c.properties, c.creation_time, c.is_open, t.text
