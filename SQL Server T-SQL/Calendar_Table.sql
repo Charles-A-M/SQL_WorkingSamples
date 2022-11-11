@@ -217,45 +217,174 @@ go
 CREATE or ALTER FUNCTION dbo.GetEasterHolidays(@TheYear INT) 
 	RETURNS TABLE WITH SCHEMABINDING
 AS
-
-	/*	===============================================================================================
-			AND THEN THERE IS EASTER
-			Which is based on lunar cycles and such, so the formula is a bit complex.
-			https://www.mssqltips.com/sqlservertip/4054/creating-a-date-dimension-or-calendar-table-in-sql-server/ 
+	/*	-- ===============================================================================================
+		--	AND THEN THERE IS EASTER
+		--  Easter Sunday is the Sunday following the paschal full moon date. 
+		--	https://www.mssqltips.com/sqlservertip/4054/creating-a-date-dimension-or-calendar-table-in-sql-server/ 
+		-- ===============================================================================================
 	*/
+	/*  --  from the above mssqltips.com link:
 	RETURN (
 		WITH x AS (
-    SELECT TheDate = DATEFROMPARTS(@TheYear, [Month], [Day])
-      FROM (SELECT [Month], [Day] = DaysToSunday + 28 - (31 * ([Month] / 4))
-			  FROM (SELECT [Month] = 3 + (DaysToSunday + 40) / 44, DaysToSunday
-					  FROM (SELECT DaysToSunday = paschal - ((@TheYear + (@TheYear / 4) + paschal - 13) % 7)
-							  FROM (SELECT paschal = epact - (epact / 28)
-									  FROM (SELECT epact = (24 + 19 * (@TheYear % 19)) % 30) 
-													AS epact
-									) AS paschal
-							) AS dts
-					) AS m
-			) AS d
+			SELECT TheDate = DATEFROMPARTS(@TheYear, [Month], [Day])
+			  FROM (SELECT [Month], [Day] = DaysToSunday + 28 - (31 * ([Month] / 4))
+					  FROM (SELECT [Month] = 3 + (DaysToSunday + 40) / 44, DaysToSunday
+							  FROM (SELECT DaysToSunday = paschal - ((@TheYear + (@TheYear / 4) + paschal - 13) % 7)
+									  FROM (SELECT paschal = epact - (epact / 28)
+											  FROM (SELECT epact = (24 + 19 * (@TheYear % 19)) % 30) AS epact
+											) AS paschal
+									) AS dts
+							) AS m
+					) AS d
+				)
+		SELECT TheDate, HolidayText = 'Easter Sunday'	  FROM x	UNION ALL 
+		SELECT DATEADD(DAY, -2, TheDate), 'Good Friday'   FROM x	UNION ALL 
+		SELECT DATEADD(DAY,  1, TheDate), 'Easter Monday' FROM x
+	);
+	*/
+	/*	-- ===============================================================================================
+		-- This longer version more closely aligns with the wikipedia article's formula. 
+			Not sure if the above is a reduced form of this same set, but a few sample years further out from now
+			didn't return the same values, so I believe this may be more accurate.
+		-- ===============================================================================================
+		-- */
+	return (
+		with ab     AS ( Select @theYear % 19 AS A, @theYear % 4 AS B ),
+		     ck     AS ( Select A, B, @theYear % 7 AS C, FLOOR(@theYear / 100) AS K                                          from ab ),
+		     pq     AS ( select A, B, C, K, FLOOR((13 + 8 * K) / 25) AS P, FLOOR(K / 4) AS Q                                 from ck ),
+			 mn     AS ( Select A, B, C, K, P, Q,  (15 - P + K - Q) % 30 AS M,  (4 + K - Q) % 7 AS N                         from pq ),
+			 d      AS ( Select A, B, C, K, P, Q, M, N, (19 * A + M) % 30 AS D                                               from mn ),
+			 e      AS ( Select A, B, C, K, P, Q, M, N, D, (2 * B + 4 * C + 6 * D + N) % 7 AS E, (11 * M + 11) % 30 AS X     from d  ),
+			 flg    AS ( select A, B, C, K, P, Q, M, N, D, E, Case When D = 28 and E = 6 and X < 19 then 1 
+			                                                       when D = 29 and E = 6 then 2 else 0 end AS Z              from e  ),
+		     dy     AS ( select A, B, C, K, P, Q, M, N, D, E, Z, Case when Z > 0 then 99 else 22 + D + E end AS Mar, 
+													             case when Z = 1 then 18 
+														              when Z = 2 then 19 else D + E - 9 End AS Apr           from flg),
+			 mnth   AS ( select A, B, C, K, P, Q, M, N, D, E, Z, Mar, Apr, case when Mar > 31 then 4 else 3 end AS [Month], 
+			                                                               case when Mar > 31 then Apr else Mar end AS [Day] from dy )
+		select /* A     AS [A-19Year_LunarCycle], 
+		       B , 
+			   C , 
+		       K        AS [K-100YrLeapOffset], 
+			   Q        AS [Q-400YrLeapOffset],
+			   P        AS [P-LunarRoundingCorrection],
+		       M        AS [M-CenturyStartPt], 
+			   N        AS [N-01Jan_WeekdayOffset], 
+			   D        AS [D-22Mar_Offset], 
+			   E        AS [E-Offset_D_to_Sunday], 
+			   Z        AS [z-HistoricalOFfsetFlag], 
+			   Mar      AS [m-MarchOffset], 
+			   Apr      AS [a-AprilOffset],  -- */
+			   @theYear AS [Easter Year],   
+			   [Month]  AS [Easter Month],   
+			   [Day]    AS [Easter Day],  
+			   DATEADD(Day, -7, DATEFROMPARTS(@theYear, [Month], [Day])) AS [Palm Sunday],		/* Sixth day of Lent. 1st day of Holy Week */
+			   DATEADD(Day, -3, DATEFROMPARTS(@theYear, [Month], [Day])) AS [Maundy Thursday],  /* Last supper. Maundy" comes from the Latin word mandatum, or commandment, reflecting Jesus' words "I give you a new commandment. */
+			   DATEADD(Day, -2, DATEFROMPARTS(@theYear, [Month], [Day])) AS [Good Friday],		/* Commemorates the crucifixion. Buried on Sat, the Sabbath. */
+			   DATEFROMPARTS(@theYear, [Month], [Day])                   AS [Easter Sunday],	/* celebrates the resurrection */
+			   DATEADD(Day, 1,  DATEFROMPARTS(@theYear, [Month], [Day])) AS [Easter Monday]
+		  from mnth 
 		)
-	SELECT TheDate, HolidayText = 'Easter Sunday'	  FROM x
-    UNION ALL 
-	SELECT DATEADD(DAY, -2, TheDate), 'Good Friday'   FROM x
-    UNION ALL 
-	SELECT DATEADD(DAY,  1, TheDate), 'Easter Monday' FROM x
-);
+/*	-- ===============================================================================================
+	--	https://en.wikipedia.org/wiki/Date_of_Easter
+		From the above wikipedia article:
+			subtraction in modulo math is done via addition.
+
+		The paschal full moon date is the ecclesiastical full moon date on or after 21 March. 
+		The Gregorian method derives paschal full moon dates by determining the epact for each year.
+
+		The epact of 1 represents the theoretical 1st visibility of the 1st crescent of the moon.
+			Day 14, then, is the the day of the full moon. New moon is day 29 of a hollow (29-day) month or 30 of a full(30-day) month.
+		The paschal full moon date for a year is found from it's sequence # in the Metonic cycle. Called the golden number.
+			This repeats the lunar phase on Jan 1 every 19 years. The Gregorian reform messes this up somewhat.
+			As of this writing, the current Metonic cycle began in 2014 and goes through 2032.
+		On this cycle, the Pascal full moon is either 11 days earlier than the previous year or 19 days later, 
+			except that in year 1 the date is 18 days later (Apr 14, not 15).
+
+		First Part:
+		D represents the # of days, counting from 22 March, to the day after the full moon.
+		A is the year's position in the 19-year lunar phase cycle. It's not exactly the Metonic cycle (6939.6813 days vs 6939.6075 days).
+			(19a + M) mod 30 repeats every 19 years within each century as M is determined per century. 
+			The 19-yr cycle has nothing to do with the 19 in 19a. This is correcting a mismatch betweeen calendar yr and integer num of lunar months.
+			A calendar year (non-leap year) has 365 days and the closest one can come with an integer number of lunar months is 12 × 29.5 = 354 days. 
+			The difference is 11 days, which must be corrected for by moving the following year's occurrence of a full moon 11 days back. 
+			But in modulo 30 arithmetic, subtracting 11 is the same as adding 19, hence the addition of 19 for each year added, i.e. 19a
+		M serves to have a correct starting point at the start of each century. It takes the num of leap years up until that century.
+		K inhibits a leap day every 100 years.
+		Q reinstalls it every 400 years.
+			yielding (k − q) as the total number of inhibitions to the pattern of a leap day every four years. 
+			Thus we add (k − q) to correct for leap days that never occurred. 
+		P corrects for the lunar orbit not being fully describable in integer terms.
+
+		The range of days considered for the full moon to determine Easter are 21 March (the day of the ecclesiastical equinox of spring) to 18 April -- a 29-day range. 
+			However, in the mod 30 arithmetic of variable d and constant M, both of which can have integer values in the range 0 to 29, the range is 30. 
+			Therefore, adjustments are made in critical cases. Once d is determined, this is the number of days to add to 22 March 
+			(the day after the earliest possible full moon allowed, which is coincident with the ecclesiastical equinox of spring) to obtain the date of the day after the full moon.
+		So the first allowable date of Easter is March 22 + d + 0, as Easter is to celebrate the Sunday after the ecclesiastical full moon, that is if the full moon falls on Sunday 21 March Easter is to be celebrated 7 days after, while if the full moon falls on Saturday 21 March Easter is the following 22 March.
+
+		Second Part:
+		E, the additional offset days that must be added to D to arrive at a Sunday; 0 to 6 determined via modulo 7 arithmetic:
+			E = 2b + 4c + 6d + N mod 7.
+			2b + 4c fixes for weekdays slide each year. year = 365, but 52*7 = 364, so we lose one weekday each year.
+			6d fixes for the corresponding slide of the lunar year.
+			Therefore E ends up holding the step from day after the day of the full moon to the nearest following Sunday, between 0 and 6 days.
+		N provides the starting point for the calculation for each century and depends on what weekday 1 Jan falls on.
+		D + E hields a range of offsets 0 - 35, or 22 March to 26 April. 
+			For historical compatibility, all offsets of 35 and some of 34 are subtracted by 7, jumping back 1 week.
+			Thus, 26 Apr is never Easter and 19 Apr is overrepresented. This is a historical correction and has nothing to do with the mathematical algorithm.
+			The offset of 34 is adjusted if D=28 and D=29.
+
+		This algorithm is not valid for years < 1583, as that was the 1st year Gregorian calendars were used for Easter.
+		This algorithm may not be valid for far-future dates, since churches can set Easter to whatever they decide.
 
 
-GO
+		A-19Year_LunarCycle	B	C	K-100YrLeapOffset	Q-400YrLeapOffset	P-LunarRoundingCorrection	
+		10					1	6	17						4				5	
+		3					1	3	18						4				6	
+		4					1	1	19						4				6	
+		17					2	0	19						4				6	
+		8					2	6	20						5				6	
+		9					3	0	20						5				6	
+		10					0	1	20						5				6	
+		11					1	2	20						5				6	
+		18					2	3	22						5				7		
+
+		M-CenturyStartPt	N-01Jan_WeekdayOffset	D-22Mar_Offset	E-Offset_D_to_Sunday	z-HistoricalOFfsetFlag	m-MarchOffset	a-AprilOffset	
+		23					3						3				5						0						30				-1	
+		23					4						20				5						0						47				16	
+		24					5						10				1						0						33				2	
+		24					5						17				6						0						45				14	
+		24					5						26				0						0						48				17	
+		24					5						15				3						0						40				9	
+		24					5						4				5						0						31				0	
+		24					5						23				6						0						51				20	
+		25					0						7				2						0						31				0	
+
+		Easter Year	Easter Month	Easter Day	Palm Sunday	Maundy Thursday	Good Friday	Easter Sunday	Easter Monday
+		1777		3				30			1777-03-23	1777-03-27		1777-03-28	1777-03-30		1777-03-31
+		1865		4				16			1865-04-09	1865-04-13		1865-04-14	1865-04-16		1865-04-17
+		1961		4				2			1961-03-26	1961-03-30		1961-03-31	1961-04-02		1961-04-03
+		1974		4				14			1974-04-07	1974-04-11		1974-04-12	1974-04-14		1974-04-15
+		2022		4				17			2022-04-10	2022-04-14		2022-04-15	2022-04-17		2022-04-18
+		2023		4				9			2023-04-02	2023-04-06		2023-04-07	2023-04-09		2023-04-10
+		2024		3				31			2024-03-24	2024-03-28		2024-03-29	2024-03-31		2024-04-01
+		2025		4				20			2025-04-13	2025-04-17		2025-04-18	2025-04-20		2025-04-21
+		2222		3				31			2222-03-24	2222-03-28		2222-03-29	2222-03-31		2222-04-01
+
+	*/
+go
+
+
 
 
 
 /* get our Easter holidays */
 
 INSERT dbo.HolidayDimension(TheDate, CalendarDimensionID, HolidayText)
-SELECT d.TheDate, 1, h.HolidayText
+SELECT d.TheDate, 1, 'Easter'
   FROM dbo.DateDimension AS d
  CROSS APPLY dbo.GetEasterHolidays(d.TheYear) AS h
- WHERE d.TheDate = h.TheDate;
+ WHERE d.TheDate = h.[Easter Sunday];
 go
 
 /*	===============================================================================================

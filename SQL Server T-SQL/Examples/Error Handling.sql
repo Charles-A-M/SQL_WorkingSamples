@@ -27,15 +27,20 @@
 				isnull('. Line: ' + cast(ERROR_LINE() as varchar), '') + '.   ' +
 				isnull(ERROR_MESSAGE(), '') + '  ' ;
 			--Do something with the error message
+			THROW 51000, 'The record does not exist.', 1;  
 		END CATCH;
 	
 	/*
+THROW 51000, 'The record does not exist.', 1;  
+	err num >= 50000,
+			err msg
+				state 1-255.
 	
 Differences Between RAISERROR and THROW
 The following table lists differences between the RAISERROR and THROW statements.
 
 	RAISERROR statement								THROW statement
-If a msg_id is passed to RAISERROR, 			The error_number parameter does not have to be defined in sys.messages.
+If a msg_id is passed to RAISERROR, 			The error_number parameter does not have to be defined in sys.messages. Must be >= 50000 
 the ID 	must be defined in sys.messages.	
 
 The msg_str parameter can contain 				The message parameter does not accept printf style formatting.
@@ -46,6 +51,9 @@ severity of the exception.						always set to 16. However, when THROW is used to
 												is set to that exception's severity level.
 												
 Does not honor SET XACT_ABORT.					Transactions will be rolled back if SET XACT_ABORT is ON.
+
+
+issue a THROW inside a catch block without any parameters throws the error that was caught.
 */
 
 

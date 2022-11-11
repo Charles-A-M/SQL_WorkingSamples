@@ -11,3 +11,13 @@
 		
 		exec msdb.dbo.sp_send_dbmail @Recipients = @sendTo, @blind_copy_recipients = 'test4@example.com', 
 			@body  = 'TESTING!', @Subject = 'Testing!',  @body_format = 'HTML', @copy_recipients = @emailCC;
+			
+		
+		/* this will get the email address for a given Operator, rather than hard-coding an email address. */
+		DECLARE @OperatorName sysname = N'<Operator Name>';
+
+		DECLARE @OperatorEmailAddress nvarchar(100) 
+			= (SELECT email_address 
+			FROM msdb.dbo.sysoperators
+			WHERE [name] = @OperatorName);
+		select @OperatorEmailAddress;

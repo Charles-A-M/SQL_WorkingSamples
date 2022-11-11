@@ -1,0 +1,41 @@
+<html>
+<head>
+	<script src="Holidays.js"></script>
+	<title>Testing JS code</title>
+</head>
+<body>
+	<h1>Testing JS code</h1>
+	<p><strong>2021</strong></p>
+	<ul id="ah1"></ul>
+	<p><strong>2022</strong></p>
+	<ul id="ah2"></ul>
+	<p><strong>2023</strong></p>
+	<ul id="ah3"></ul>
+	
+	
+	
+	
+	
+
+<script>
+	var ah1 = getHolidays(2021, false, true);
+	var ah2 = getHolidays(2022, false, true);
+	var ah3 = getHolidays(2023, false, true);
+	
+	writeHolidays(ah1, "ah1");
+	writeHolidays(ah2, "ah2");
+	writeHolidays(ah3, "ah3");
+
+
+	function writeHolidays(inH, inEl){
+		var txt = '';
+		inH.forEach(h => {
+			txt += '<li>' + h.dateText + ': ' + h.description + '</li>';
+		});
+		document.getElementById(inEl).innerHTML = txt;
+	}
+	
+</script>
+
+</body>
+</html>
