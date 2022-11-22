@@ -12,3 +12,11 @@ RESTORE LOG [StackExchange.Bicycles.Meta] FROM DISK = '\\ny-back01\backups\SQL\_
 -- Re-join database to availability group
 ALTER DATABASE [StackExchange.Bicycles.Meta] SET HADR AVAILABILITY GROUP = [SENetwork_AG];
 ALTER DATABASE [StackExchange.Bicycles.Meta] SET HADR RESUME;
+
+
+/*
+--Msg 35250, Level 16, State 7, Line 2 : 
+GRANT CONNECT ON ENDPOINT::Hadr_endpoint TO [codwtr\sqlengine];
+GRANT CONNECT ON ENDPOINT::Hadr_endpoint TO [codwtr\sqlagent];
+
+*/

@@ -19,7 +19,7 @@
 		END TRY
 		BEGIN CATCH
 			RollBack;
-			SELECT @@ErrMsg = isnull(ERROR_NUMBER(), 0), @szErrMsg = 
+			SELECT @ErrMsg = isnull(ERROR_NUMBER(), 0), @szErrMsg = 
 				'Error: ' + Cast( isnull(ERROR_NUMBER(), 0) AS varChar) + 
 				isnull('. State: ' + cast(ERROR_STATE() AS varchar), '') + 
 				isnull('. Severity: ' + cast(ERROR_SEVERITY() AS varChar), '') + 
